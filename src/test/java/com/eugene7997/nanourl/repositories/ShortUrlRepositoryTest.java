@@ -6,6 +6,7 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -46,7 +47,8 @@ class ShortUrlRepositoryTest {
     @Test
     void incrementHits_updatesHitsAndLastAccessedAt() {
         repository.save(new ShortUrl("abc1234", "https://example.com", null));
-        Instant before = Instant.now();
+        // H2 stores only microseconds not nanoseconds in JVM
+        Instant before = Instant.now().truncatedTo(ChronoUnit.MICROS);
 
         repository.incrementHits("abc1234", before);
 
