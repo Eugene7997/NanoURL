@@ -8,7 +8,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.eugene7997.nanourl.services.UrlService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
+@Tag(name = "Redirect", description = "Resolve a short code and redirect to the target URL")
 public class RedirectController {
     private final UrlService service;
 
@@ -17,6 +23,11 @@ public class RedirectController {
     }
 
     @GetMapping("/{code}")
+    @Operation(summary = "Redirect to target URL and register a hit")
+    @ApiResponses({
+        @ApiResponse(responseCode = "302", description = "Redirecting"),
+        @ApiResponse(responseCode = "404", description = "Not found or expired")
+    })
     public ResponseEntity<Void> redirect(@PathVariable String code) {
         return service.lookupActive(code)
                 .<ResponseEntity<Void>>map(url -> {
