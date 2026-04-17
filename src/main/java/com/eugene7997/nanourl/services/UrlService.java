@@ -13,6 +13,9 @@ import com.eugene7997.nanourl.dtos.CreateShortUrlRequest;
 import com.eugene7997.nanourl.entities.ShortUrl;
 import com.eugene7997.nanourl.repositories.ShortUrlRepository;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 public class UrlService {
 
@@ -38,13 +41,15 @@ public class UrlService {
         for (int attempt = 0; attempt < 10; attempt++) {
             String attemptCode = (attempt == 0) ? code : codeService.generateUniqueCode();
             try {
-                return repository.save(new ShortUrl(attemptCode, target, expiresAt));
+                ShortUrl saved = repository.save(new ShortUrl(attemptCode, target, expiresAt));
+                log.info("Created short URL code={} target={} customAlias={} expiresAt={}", saved.getCode(), target, isCustomAlias, expiresAt);
+                return saved;
             }
             catch (DataIntegrityViolationException e) {
                 if (isCustomAlias) {
                     throw new IllegalArgumentException("Alias already taken");
                 }
-                // generated code collision — retry with a new code
+                log.warn("Code collision on attempt {}, retrying", attempt + 1);
             }
         }
         throw new IllegalStateException("Failed to generate a unique short code after retries");
@@ -57,6 +62,7 @@ public class UrlService {
 
     public void registerHit(String code) {
         repository.incrementHits(code, Instant.now());
+        log.debug("Registered hit for code={}", code);
     }
 
     private String normalizeUrl(String input) {

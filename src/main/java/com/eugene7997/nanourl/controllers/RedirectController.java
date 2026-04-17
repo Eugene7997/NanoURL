@@ -12,7 +12,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestController
 @Tag(name = "Redirect", description = "Resolve a short code and redirect to the target URL")
 public class RedirectController {
@@ -31,11 +33,15 @@ public class RedirectController {
     public ResponseEntity<Void> redirect(@PathVariable String code) {
         return service.lookupActive(code)
                 .<ResponseEntity<Void>>map(url -> {
+                    log.info("Redirect code={} -> {}", code, url.getTargetUrl());
                     service.registerHit(url.getCode());
                     return ResponseEntity.status(302)
                             .header(HttpHeaders.LOCATION, url.getTargetUrl())
                             .build();
                 })
-                .orElse(ResponseEntity.notFound().build());
+                .orElseGet(() -> {
+                    log.warn("Redirect miss for code={}", code);
+                    return ResponseEntity.notFound().build();
+                });
     }
 }
