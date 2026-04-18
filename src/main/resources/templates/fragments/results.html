@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="shorten-result">
+    <div class="result">
+        <p class="result-label">Your short link</p>
+        <div class="result-link-row">
+            <input type="text" class="result-input" id="shorten-link-input" th:value="${shortLink}" readonly>
+            <button class="btn-copy"
+                    _="on click
+                           call navigator.clipboard.writeText(the value of #shorten-link-input)
+                           set my.textContent to 'Copied!'
+                           wait 2s
+                           set my.textContent to 'Copy'">
+                Copy
+            </button>
+        </div>
+        <div class="result-meta">
+            <span>Code: <strong th:text="${shortUrl.code}"></strong></span>
+            <span th:if="${shortUrl.expiresAt != null}">
+                Expires:
+                <time th:text="${shortUrl.expiresAt}"
+                      _="on load set my.textContent to (new Date(my.textContent)).toLocaleDateString()"></time>
+            </span>
+            <span th:unless="${shortUrl.expiresAt != null}">No expiry</span>
+        </div>
+    </div>
+</div>
+
+<div th:fragment="lookup-result">
+    <div class="result">
+        <p class="result-label">Short URL details</p>
+        <div class="result-link-row">
+            <input type="text" class="result-input" id="lookup-link-input" th:value="${shortLink}" readonly>
+            <button class="btn-copy"
+                    _="on click
+                           call navigator.clipboard.writeText(the value of #lookup-link-input)
+                           set my.textContent to 'Copied!'
+                           wait 2s
+                           set my.textContent to 'Copy'">
+                Copy
+            </button>
+        </div>
+        <table class="meta-table">
+            <tr>
+                <th>Target URL</th>
+                <td><a th:href="${shortUrl.targetUrl}" th:text="${shortUrl.targetUrl}" target="_blank" rel="noopener noreferrer"></a></td>
+            </tr>
+            <tr>
+                <th>Hits</th>
+                <td th:text="${shortUrl.hits}"></td>
+            </tr>
+            <tr>
+                <th>Created</th>
+                <td>
+                    <time th:text="${shortUrl.createdAt}"
+                          _="on load set my.textContent to (new Date(my.textContent)).toLocaleString()"></time>
+                </td>
+            </tr>
+            <tr th:if="${shortUrl.lastAccessedAt != null}">
+                <th>Last accessed</th>
+                <td>
+                    <time th:text="${shortUrl.lastAccessedAt}"
+                          _="on load set my.textContent to (new Date(my.textContent)).toLocaleString()"></time>
+                </td>
+            </tr>
+            <tr>
+                <th>Expires</th>
+                <td th:if="${shortUrl.expiresAt != null}">
+                    <time th:text="${shortUrl.expiresAt}"
+                          _="on load set my.textContent to (new Date(my.textContent)).toLocaleString()"></time>
+                </td>
+                <td th:unless="${shortUrl.expiresAt != null}">Never</td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<div th:fragment="error-result">
+    <div class="result error">
+        <span th:text="${error}"></span>
+    </div>
+</div>
+
+</body>
+</html>

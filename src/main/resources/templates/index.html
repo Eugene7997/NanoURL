@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NanoURL — URL Shortener</title>
+    <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js"></script>
+    <script src="https://unpkg.com/hyperscript.org@0.9.13/dist/_hyperscript.min.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #0f172a;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --error-fg: #b91c1c;
+            --error-bg: #fef2f2;
+            --error-border: #fecaca;
+            --success-bg: #f0fdf4;
+            --success-border: #bbf7d0;
+            --radius: 0.75rem;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.08);
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 3rem 1rem 2rem;
+        }
+
+        .container { max-width: 580px; margin: 0 auto; }
+
+        header { text-align: center; margin-bottom: 2.5rem; }
+
+        header h1 {
+            font-size: 2.75rem;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: -0.05em;
+            line-height: 1;
+        }
+
+        header p { color: var(--muted); margin-top: 0.5rem; font-size: 1rem; }
+
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 1.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .card h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1.25rem;
+        }
+
+        .field { margin-bottom: 0.875rem; }
+
+        .field label {
+            display: block;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: var(--muted);
+            margin-bottom: 0.375rem;
+        }
+
+        .field input {
+            width: 100%;
+            padding: 0.5625rem 0.75rem;
+            border: 1.5px solid var(--border);
+            border-radius: 0.5rem;
+            font-size: 0.9375rem;
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+            background: white;
+        }
+
+        .field input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgb(79 70 229 / 0.12);
+        }
+
+        .optional-toggle {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-size: 0.8125rem;
+            cursor: pointer;
+            padding: 0.25rem 0;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            font-weight: 500;
+        }
+
+        .optional-toggle:hover { text-decoration: underline; }
+
+        .optional-toggle .chevron {
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+
+        .optional-toggle.open .chevron { transform: rotate(180deg); }
+
+        .optional-fields { display: none; }
+        .optional-fields.open { display: block; }
+
+        .btn-primary {
+            width: 100%;
+            padding: 0.6875rem 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.9375rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.15s, transform 0.1s;
+            margin-top: 0.375rem;
+        }
+
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-primary:active { transform: scale(0.99); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .htmx-indicator { display: none; }
+        .htmx-request .htmx-indicator { display: inline; }
+        .htmx-not-indicator { display: inline; }
+        .htmx-request .htmx-not-indicator { display: none; }
+
+        .result-area { margin-top: 1.125rem; }
+
+        .result {
+            padding: 1rem 1.125rem;
+            background: var(--success-bg);
+            border: 1.5px solid var(--success-border);
+            border-radius: 0.5rem;
+        }
+
+        .result.error {
+            background: var(--error-bg);
+            border-color: var(--error-border);
+            color: var(--error-fg);
+            font-size: 0.9rem;
+        }
+
+        .result-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.625rem;
+        }
+
+        .result-link-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .result-input {
+            flex: 1;
+            padding: 0.5rem 0.75rem;
+            border: 1.5px solid var(--border);
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+            background: white;
+            color: var(--text);
+            outline: none;
+            min-width: 0;
+        }
+
+        .btn-copy {
+            padding: 0.5rem 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background-color 0.15s;
+            flex-shrink: 0;
+        }
+
+        .btn-copy:hover { background: var(--primary-dark); }
+
+        .result-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
+
+        .result-meta span { display: flex; align-items: center; gap: 0.25rem; }
+
+        .meta-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+            margin-top: 0.75rem;
+        }
+
+        .meta-table tr { border-bottom: 1px solid var(--border); }
+        .meta-table tr:last-child { border-bottom: none; }
+
+        .meta-table th {
+            text-align: left;
+            color: var(--muted);
+            font-weight: 500;
+            padding: 0.5rem 0.75rem 0.5rem 0;
+            width: 38%;
+            vertical-align: top;
+            white-space: nowrap;
+        }
+
+        .meta-table td {
+            padding: 0.5rem 0;
+            color: var(--text);
+            word-break: break-all;
+        }
+
+        .meta-table a { color: var(--primary); text-decoration: none; }
+        .meta-table a:hover { text-decoration: underline; }
+
+        footer {
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.8125rem;
+            margin-top: 1rem;
+        }
+
+        footer a { color: var(--primary); text-decoration: none; }
+        footer a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>NanoURL</h1>
+        <p>Shorten your links instantly</p>
+    </header>
+
+    <main>
+        <!-- Shorten card -->
+        <section class="card">
+            <h2>Shorten a URL</h2>
+            <form hx-post="/shorten"
+                  hx-target="#shorten-result"
+                  hx-swap="innerHTML"
+                  _="on htmx:beforeRequest add @disabled to <button[type=submit]/> in me
+                     on htmx:afterRequest remove @disabled from <button[type=submit]/> in me">
+                <div class="field">
+                    <label for="url">URL</label>
+                    <input type="text" id="url" name="url" placeholder="https://example.com" required autocomplete="off">
+                </div>
+
+                <button type="button" class="optional-toggle"
+                        _="on click toggle .open on me toggle .open on #optional-shorten">
+                    <span class="chevron">▾</span> Optional settings
+                </button>
+
+                <div id="optional-shorten" class="optional-fields">
+                    <div class="field">
+                        <label for="alias">Custom alias</label>
+                        <input type="text" id="alias" name="alias" placeholder="my-alias (3–32 chars, A-Z a-z 0-9 _)">
+                    </div>
+                    <div class="field">
+                        <label for="expiryDays">Expiry (days)</label>
+                        <input type="number" id="expiryDays" name="expiryDays" min="1" max="365" placeholder="e.g. 30">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary">
+                    <span class="htmx-indicator">Shortening… </span>
+                    <span class="htmx-not-indicator">Shorten</span>
+                </button>
+            </form>
+            <div id="shorten-result" class="result-area"></div>
+        </section>
+
+        <!-- Lookup card -->
+        <section class="card">
+            <h2>Look Up a Short URL</h2>
+            <form hx-get="/lookup"
+                  hx-target="#lookup-result"
+                  hx-swap="innerHTML"
+                  _="on htmx:beforeRequest add @disabled to <button[type=submit]/> in me
+                     on htmx:afterRequest remove @disabled from <button[type=submit]/> in me">
+                <div class="field">
+                    <label for="code">Short code</label>
+                    <input type="text" id="code" name="code" placeholder="abc1234" required autocomplete="off">
+                </div>
+                <button type="submit" class="btn-primary">
+                    <span class="htmx-indicator">Looking up… </span>
+                    <span class="htmx-not-indicator">Look Up</span>
+                </button>
+            </form>
+            <div id="lookup-result" class="result-area"></div>
+        </section>
+    </main>
+</div>
+</body>
+</html>
