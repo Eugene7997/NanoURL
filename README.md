@@ -43,6 +43,24 @@ Then run with the `prod` profile:
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=prod
 ```
 
+## Running with Docker
+
+```bash
+# Build
+docker build -t nanourl .
+
+# Run (dev — H2 in-memory)
+docker run -p 8080:8080 nanourl
+
+# Run (prod — PostgreSQL)
+docker run -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=prod \
+  -e DB_URL=jdbc:postgresql://<host>/<db> \
+  -e DB_USERNAME=<user> \
+  -e DB_PASSWORD=<password> \
+  nanourl
+```
+
 ## Docs
 
 - **Swagger UI** — available at `/swagger-ui.html` in dev. Disabled in production.
