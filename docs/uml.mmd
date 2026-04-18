@@ -1,0 +1,103 @@
+classDiagram
+    direction LR
+
+    class NanourlApplication {
+        +main(String[] args) void$
+    }
+
+    class UrlController {
+        -UrlService service
+        +create(CreateShortUrlRequest request) ResponseEntity~ShortUrlResponse~
+        +get(String code) ResponseEntity~ShortUrlResponse~
+    }
+
+    class RedirectController {
+        -UrlService service
+        +redirect(String code) ResponseEntity~Void~
+    }
+
+    class PageController {
+        -UrlService urlService
+        +index() String
+        +shorten(String url, String alias, Integer expiryDays, Model model, HttpServletRequest request) String
+        +lookup(String code, Model model, HttpServletRequest request) String
+        -baseUrl(HttpServletRequest request) String
+    }
+
+    class GlobalExceptionHandler {
+        +handleIllegalArgument(IllegalArgumentException e) ResponseEntity~String~
+        +handleValidation(MethodArgumentNotValidException e) ResponseEntity~String~
+    }
+
+    class UrlService {
+        -ShortUrlRepository repository
+        -ShortCodeService codeService
+        +create(CreateShortUrlRequest request) ShortUrl
+        +lookupActive(String code) Optional~ShortUrl~
+        +registerHit(String code) void
+        -normalizeUrl(String input) String
+    }
+
+    class ShortCodeService {
+        -ShortUrlRepository repository
+        -int DEFAULT_LENGTH$
+        -Pattern ALIAS_PATTERN$
+        +generateUniqueCode() String
+        +validateCustomAlias(String alias) Optional~String~
+    }
+
+    class Base62 {
+        -char[] ALPHABET$
+        -int RADIX$
+        -SecureRandom RNG$
+        +randomCode(int length) String$
+    }
+
+    class ShortUrlRepository {
+        <<interface>>
+        +findByCode(String code) Optional~ShortUrl~
+        +existsByCode(String code) boolean
+        +incrementHits(String code, Instant now) int
+    }
+
+    class ShortUrl {
+        <<entity>>
+        -Long id
+        -String code
+        -String targetUrl
+        -Instant expiresAt
+        -long hits
+        -Instant lastAccessedAt
+        -Instant createdAt
+    }
+
+    class CreateShortUrlRequest {
+        <<DTO>>
+        -String url
+        -String alias
+        -Integer expiryDays
+    }
+
+    class ShortUrlResponse {
+        <<DTO>>
+        -String code
+        -String targetUrl
+        -Instant lastAccessedAt
+        -Instant createdAt
+        +from(ShortUrl url) ShortUrlResponse$
+    }
+
+    UrlController --> UrlService : uses
+    RedirectController --> UrlService : uses
+    PageController --> UrlService : uses
+    UrlService --> ShortUrlRepository : uses
+    UrlService --> ShortCodeService : uses
+    UrlService ..> CreateShortUrlRequest : accepts
+    UrlService ..> ShortUrl : returns
+    ShortCodeService --> ShortUrlRepository : uses
+    ShortCodeService ..> Base62 : calls static
+    ShortUrlRepository --> ShortUrl : manages
+    UrlController ..> CreateShortUrlRequest : accepts
+    UrlController ..> ShortUrlResponse : returns
+    PageController ..> CreateShortUrlRequest : accepts
+    ShortUrlResponse ..> ShortUrl : maps from
