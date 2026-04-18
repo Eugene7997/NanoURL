@@ -1,6 +1,7 @@
 package com.eugene7997.nanourl.controllers;
 
 import com.eugene7997.nanourl.dtos.CreateShortUrlRequest;
+import com.eugene7997.nanourl.dtos.ShortUrlResponse;
 import com.eugene7997.nanourl.entities.ShortUrl;
 import com.eugene7997.nanourl.services.UrlService;
 import org.junit.jupiter.api.Test;
@@ -39,12 +40,12 @@ class UrlControllerTest {
         ShortUrl saved = new ShortUrl("abc1234", "https://example.com", null);
         when(urlService.create(any())).thenReturn(saved);
 
-        ResponseEntity<ShortUrl> response = urlController.create(buildRequest("https://example.com", null, null));
+        ResponseEntity<ShortUrlResponse> response = urlController.create(buildRequest("https://example.com", null, null));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getHeaders().getLocation()).hasToString("/api/urls/abc1234");
         assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getCode()).isEqualTo("abc1234");
+        assertThat(response.getBody().code()).isEqualTo("abc1234");
     }
 
     @Test
@@ -63,19 +64,19 @@ class UrlControllerTest {
         ShortUrl url = new ShortUrl("abc1234", "https://example.com", null);
         when(urlService.lookupActive("abc1234")).thenReturn(Optional.of(url));
 
-        ResponseEntity<ShortUrl> response = urlController.get("abc1234");
+        ResponseEntity<ShortUrlResponse> response = urlController.get("abc1234");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getCode()).isEqualTo("abc1234");
-        assertThat(response.getBody().getTargetUrl()).isEqualTo("https://example.com");
+        assertThat(response.getBody().code()).isEqualTo("abc1234");
+        assertThat(response.getBody().targetUrl()).isEqualTo("https://example.com");
     }
 
     @Test
     void get_nonexistentCode_returns404() {
         when(urlService.lookupActive("missing")).thenReturn(Optional.empty());
 
-        ResponseEntity<ShortUrl> response = urlController.get("missing");
+        ResponseEntity<ShortUrlResponse> response = urlController.get("missing");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(response.getBody()).isNull();

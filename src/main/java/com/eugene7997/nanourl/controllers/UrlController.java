@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.eugene7997.nanourl.dtos.CreateShortUrlRequest;
-import com.eugene7997.nanourl.entities.ShortUrl;
+import com.eugene7997.nanourl.dtos.ShortUrlResponse;
 import com.eugene7997.nanourl.services.UrlService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,9 +37,9 @@ public class UrlController {
         @ApiResponse(responseCode = "201", description = "Created"),
         @ApiResponse(responseCode = "400", description = "Invalid request body or alias already taken")
     })
-    public ResponseEntity<ShortUrl> create(@Valid @RequestBody CreateShortUrlRequest request) {
-        ShortUrl result = service.create(request);
-        URI location = URI.create("/api/urls/" + result.getCode());
+    public ResponseEntity<ShortUrlResponse> create(@Valid @RequestBody CreateShortUrlRequest request) {
+        ShortUrlResponse result = ShortUrlResponse.from(service.create(request));
+        URI location = URI.create("/api/urls/" + result.code());
         return ResponseEntity.created(location).body(result);
     }
 
@@ -49,8 +49,9 @@ public class UrlController {
         @ApiResponse(responseCode = "200", description = "Found"),
         @ApiResponse(responseCode = "404", description = "Not found or expired")
     })
-    public ResponseEntity<ShortUrl> get(@PathVariable String code) {
+    public ResponseEntity<ShortUrlResponse> get(@PathVariable String code) {
         return service.lookupActive(code)
+                .map(ShortUrlResponse::from)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
