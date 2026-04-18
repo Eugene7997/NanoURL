@@ -148,3 +148,10 @@ I plan to extend this in separate repos to dive into topics like:
 2. Rate limiting
 3. Caching
 4. Load testing
+
+
+## References
+
+List of references used creating this project:
+
+1. https://medium.com/devdomain/building-a-url-shortener-in-java-and-spring-boot-9a7ac3fd70ba
